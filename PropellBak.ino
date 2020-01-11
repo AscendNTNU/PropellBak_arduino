@@ -48,7 +48,7 @@ ros::Subscriber<std_msgs::String> sub1("chatter", messageCb );
 
 
 
-char hello[4]  = "hei";
+char hello[4]  = "hei, baby <3";
 
 void setup()
 {
