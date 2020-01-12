@@ -1,5 +1,4 @@
 void timer_setup() {
-  /*
   Timer2.attachCompare1Interrupt(handler_channel_1);                          //utfører handler_channel_1 når det blir interupted
   TIMER2_BASE->CR1 = TIMER_CR1_CEN;
   TIMER2_BASE->CR2 = 0;
@@ -14,7 +13,7 @@ void timer_setup() {
   TIMER2_BASE->PSC = 71;
   TIMER2_BASE->ARR = 0xFFFF;                                                  //auto reload: Hvor lang tid timeren bruker på en runde
   TIMER2_BASE->DCR = 0;
-*/
+
 
 
 //Output til ESC
@@ -35,6 +34,5 @@ void timer_setup() {
   TIMER4_BASE->CCR1 = 1000;
 
   TIMER4_BASE->CCR1 = 1000;                                             //Output er høy til timeren kommer til <- antall mikrosekunder
-  pinMode(PB6, PWM);                                                    //PB6 er standard output for timer 4 channel 1
-
+  pinMode(PB6, PWM);                                                    //PB6 er standard output for timer 4 channel 
 }
