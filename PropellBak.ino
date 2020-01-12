@@ -7,6 +7,10 @@
 
 #include <ros.h>
 #include <std_msgs/String.h>
+#include <std_msgs/UInt32.h>
+#include <std_msgs/UInt32MultiArray.h>
+
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -18,44 +22,86 @@ int16_t motor_idle_speed = 1500;
 
 uint8_t start;
 int8_t i;
+int8_t j;
 
 uint32_t loop_timer;                                                         
 uint16_t incoming_byte;
-int16_t esc_1;
+uint32_t esc_1;
+
+
+uint32_t thrust;
+
+
+
+//De som publiseres fra en annen node
+uint32_t Channels[10];
+
+
+//De variablene vi lagrer på denne noden
+uint32_t Channels__[10];
+
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Meldinger
 
 ros::NodeHandle  nh;
 
-std_msgs::String str_msg;
 
+std_msgs::String str_msg;
+std_msgs::UInt32 int_msg;
+std_msgs::UInt32MultiArray Arr_msg;
+
+char hello[4]  = "hei";
+
+
+/////////////////////////////////////////////////////////
 //Publisher
 
 ros::Publisher pubChatter("chatter", &str_msg);
 
+ros::Publisher pubChannel2("channel2", &int_msg);
 
+ros::Publisher pubChannel("channel", &Arr_msg);   //denne kommer fra en annen ros-node
+
+
+/////////////////////////////////////////////////////////
 //Subscriber
 
 void messageCb(const std_msgs::String &toggle_msg){
   digitalWrite(PC13, HIGH-digitalRead(PC13));   
-  
-  
-  //Serial.print(toggle_msg.data);
 }
 
 ros::Subscriber<std_msgs::String> sub1("chatter", messageCb );
 
 
 
-char hello[4]  = "hei";
+
+
+void channelCb(const std_msgs::UInt32MultiArray &channel_msg){
+  Channels__[4] = channel_msg.data[4];
+  Channels__[8] = channel_msg.data[8];
+}
+
+ros::Subscriber<std_msgs::UInt32MultiArray> subChannel("channel", channelCb );
+
+
+
+
+
 
 void setup()
 {
   nh.initNode();              //initalisere node
   nh.advertise(pubChatter);   //Setter opp publisher
+  nh.advertise(pubChannel);
+  nh.advertise(pubChannel2);
 
-  nh.subscribe(sub1);         //Setter opp subscriber
+  
+  nh.subscribe(subChannel);   //Setter opp subscriber
+  nh.subscribe(sub1);         
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,28 +121,67 @@ void setup()
   while (!nh.connected()){
     nh.spinOnce();                                              //Venter 
   }
+
+  ////////////////////////////////////////////////////////////////////////////////////////
+  //Setter opp UInt32MultiArray
+
+  Arr_msg.layout.dim = (std_msgs::MultiArrayDimension *)
+  malloc(sizeof(std_msgs::MultiArrayDimension)*2);
+  Arr_msg.layout.dim[0].label = "kanaler";
+  Arr_msg.layout.dim[0].size = 10;
+  Arr_msg.layout.dim[0].stride = 1;
+  Arr_msg.layout.data_offset = 0;
+  uint32_t vec[10];
+  Arr_msg.data = vec;
+
 }
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void loop()
 {  
-  str_msg.data = hello;
-  pubChatter.publish( &str_msg );                       //publiserer meldingen
-  nh.spinOnce();
+
+  //endrer dataen som skal publiseres
+  for (int j = 0; j < 10 ; j ++){
+    Arr_msg.data[j] = 100;//Channels[j];
+  }
   
+  str_msg.data = hello;
+
+
+  thrust = Channels[4];
+  thrust += Channels[8]*10000;
+  int_msg.data = thrust;
+  
+  //publiserer dataen
+  pubChannel2.publish(&int_msg);
+  pubChatter.publish(&str_msg);                       //publiserer meldingen
+  pubChannel.publish(&Arr_msg);
+  nh.spinOnce(); 
+
+  
+
   nh.loginfo("melding: "); 
 
+
+//////////////////////////////////////////
+
+  if (Channels__[7] > 1600){
+    start = 2;
+  }
+  else {
+    start = 0;
+  }
+  
   
   if (start == 2) {                                                                //starter motoren
 
-    esc_1 = 1500;
+    esc_1 = Channels__[4];
 
     if (esc_1 < 1000) esc_1 = 1000;                                                //Hvis motoren er under revers, sett fart lik revers
     if (esc_1 > 2000) esc_1 = 2000;                                                 //Maks-puls lik 2000;
-    
   }
 
   else esc_1 = 1500;                                                               //Hvis start != 2, fart = 0
