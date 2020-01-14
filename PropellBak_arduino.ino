@@ -40,10 +40,6 @@ uint32_t Channels[10];
 //De variablene vi lagrer på denne noden
 uint32_t Channels__[10];
 
-
-
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Meldinger
 
@@ -52,8 +48,8 @@ ros::NodeHandle  nh;
 
 std_msgs::String str_msg;
 std_msgs::UInt32 int_msg;
-//std_msgs::UInt32MultiArray Arr_msg;
-auto Arr_msg = std_msgs::UInt32MultiArray();
+std_msgs::UInt32MultiArray Arr_msg;
+//auto Arr_msg = std_msgs::UInt32MultiArray();
 
 char hello[4]  = "hei";
 
@@ -125,16 +121,15 @@ void setup()
 
   ////////////////////////////////////////////////////////////////////////////////////////
   //Setter opp UInt32MultiArray
-
-  //Arr_msg.layout.dim = (std_msgs::MultiArrayDimension *)
-  //malloc(sizeof(std_msgs::MultiArrayDimension)*2);
-  //Arr_msg.layout.dim[0].label = "kanaler";
-  //Arr_msg.layout.dim[0].size = 10;
-  //Arr_msg.layout.dim[0].stride = 1;
-  //Arr_msg.layout.data_offset = 0;
-  //uint32_t vec[10];
-
-  Arr_msg.data = {0,0,0,0,0,0,0,0,0,0};
+  
+  Arr_msg.layout.dim = (std_msgs::MultiArrayDimension *)
+  malloc(sizeof(std_msgs::MultiArrayDimension)*2);
+  Arr_msg.layout.dim[0].label = "kanaler";
+  Arr_msg.layout.dim[0].size = 10;
+  Arr_msg.layout.dim[0].stride = 1;
+  Arr_msg.layout.data_offset = 0;
+  Arr_msg.data = (uint32_t *)malloc(sizeof(uint32_t)*10);
+  Arr_msg.data_length = 10;
 
 }
 
@@ -146,12 +141,10 @@ void loop()
 {  
 
   //endrer dataen som skal publiseres
+  
   for (int j = 0; j < 10 ; j ++){
     Arr_msg.data[j] = 100;//Channels[j];
   }
-  
-  str_msg.data = hello;
-
 
   thrust = Channels[4];
   thrust += Channels[8]*10000;
@@ -163,9 +156,7 @@ void loop()
   pubChannel.publish(&Arr_msg);
   nh.spinOnce(); 
 
-  
-
-  nh.loginfo("melding: "); 
+  nh.loginfo("Running!"); 
 
 
 //////////////////////////////////////////
