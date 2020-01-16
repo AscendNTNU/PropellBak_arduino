@@ -34,11 +34,11 @@ uint32_t thrust;
 
 
 //De som publiseres fra en annen node
-uint32_t Channels[10];
+uint32_t Channels[8];
 
 
 //De variablene vi lagrer på denne noden
-uint32_t Channels__[10];
+uint32_t Channels__[8];
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Meldinger
@@ -78,8 +78,8 @@ ros::Subscriber<std_msgs::String> sub1("chatter", messageCb );
 
 
 void channelCb(const std_msgs::UInt32MultiArray &channel_msg){
-  Channels__[4] = channel_msg.data[4];
-  Channels__[8] = channel_msg.data[8];
+  Channels__[3] = channel_msg.data[3];
+  Channels__[7] = channel_msg.data[7];
 }
 
 ros::Subscriber<std_msgs::UInt32MultiArray> subChannel("channel", channelCb );
@@ -91,6 +91,7 @@ ros::Subscriber<std_msgs::UInt32MultiArray> subChannel("channel", channelCb );
 
 void setup()
 {
+  nh.getHardware()->setBaud(57600);
   nh.initNode();              //initalisere node
   nh.advertise(pubChatter);   //Setter opp publisher
   nh.advertise(pubChannel);
@@ -125,11 +126,11 @@ void setup()
   Arr_msg.layout.dim = (std_msgs::MultiArrayDimension *)
   malloc(sizeof(std_msgs::MultiArrayDimension)*2);
   Arr_msg.layout.dim[0].label = "kanaler";
-  Arr_msg.layout.dim[0].size = 10;
+  Arr_msg.layout.dim[0].size = 8;
   Arr_msg.layout.dim[0].stride = 1;
   Arr_msg.layout.data_offset = 0;
-  Arr_msg.data = (uint32_t *)malloc(sizeof(uint32_t)*10);
-  Arr_msg.data_length = 10;
+  Arr_msg.data = (uint32_t *)malloc(sizeof(uint32_t)*8);
+  Arr_msg.data_length = 8;
 
 }
 
@@ -142,12 +143,11 @@ void loop()
 
   //endrer dataen som skal publiseres
   
-  for (int j = 0; j < 10 ; j ++){
-    Arr_msg.data[j] = 100;//Channels[j];
+  for (int j = 0; j < 8 ; j ++){
+    Arr_msg.data[j] = Channels[j+1];
   }
 
-  thrust = Channels[4];
-  thrust += Channels[8]*10000;
+  thrust = Channels[3];
   int_msg.data = thrust;
   
   //publiserer dataen
@@ -171,13 +171,13 @@ void loop()
   
   if (start == 2) {                                                                //starter motoren
 
-    esc_1 = Channels__[4];
+    esc_1 = Channels__[3];
 
     if (esc_1 < 1000) esc_1 = 1000;                                                //Hvis motoren er under revers, sett fart lik revers
     if (esc_1 > 2000) esc_1 = 2000;                                                 //Maks-puls lik 2000;
   }
 
-  else esc_1 = 1500;                                                               //Hvis start != 2, fart = 0
+  else esc_1 = 1000;                                                               //Hvis start != 2, fart = 0
 
 
 
