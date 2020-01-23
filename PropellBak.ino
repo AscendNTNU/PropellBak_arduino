@@ -9,6 +9,7 @@
 #include <std_msgs/String.h>
 #include <std_msgs/UInt32.h>
 #include <std_msgs/UInt32MultiArray.h>
+#include <fifth_prop/TwoInts.h>
 
 #include <vector>
 
@@ -51,7 +52,7 @@ std_msgs::UInt32 int_msg;
 std_msgs::UInt32MultiArray Arr_msg;
 //auto Arr_msg = std_msgs::UInt32MultiArray();
 
-char hello[4]  = "hei";
+char hello[4]  = "OK";
 
 
 /////////////////////////////////////////////////////////
@@ -149,11 +150,13 @@ void loop()
 
   thrust = Channels[3];
   int_msg.data = thrust;
+
+  str_msg.data = hello;
   
   //publiserer dataen
-  pubChannel2.publish(&int_msg);
+  //pubChannel2.publish(&int_msg);
   pubChatter.publish(&str_msg);                       //publiserer meldingen
-  pubChannel.publish(&Arr_msg);
+  //pubChannel.publish(&Arr_msg);
   nh.spinOnce(); 
 
   nh.loginfo("Running!"); 
@@ -187,10 +190,10 @@ void loop()
 
 
   if (micros() - loop_timer > 4050) {
-    str_msg.data = "error";                                                                  //Hvis loopen varer i mer enn 4000 mikrosekunder = feil
+    //str_msg.data = "error";                                                                  //Hvis loopen varer i mer enn 4000 mikrosekunder = feil
   }
   while (micros() - loop_timer < 4000);                                            //Vent til 4000 mikrosekunder har gått
   loop_timer = micros();  
   
-  delay(1000);
+  delay(100);
 }
