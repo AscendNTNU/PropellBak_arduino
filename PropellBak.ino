@@ -32,7 +32,7 @@ uint32_t esc_1;
 
 uint32_t thrust;
 
-
+int t = 2;
 
 //De som publiseres fra en annen node
 uint32_t Channels[8];
