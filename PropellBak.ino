@@ -22,7 +22,7 @@
 
 #include <ros.h>
 #include <std_msgs/UInt32.h>
-#include <fifth_prop/TwoInts.h>
+#include <fifth_prop/BPS_thrust.h>
 
 #include <vector>
 
@@ -60,7 +60,7 @@ ros::Publisher pubChatter("chatter", &int_msg);
 /////////////////////////////////////////////////////////
 //Subscriber
 
-void messageCb(const fifth_prop::TwoInts &toggle_msg){
+void messageCb(const fifth_prop::BPS_thrust &toggle_msg){
   thrust = toggle_msg.thrust;
   arm = toggle_msg.arm;
   NewInt = 1;
@@ -68,7 +68,7 @@ void messageCb(const fifth_prop::TwoInts &toggle_msg){
   digitalWrite(PC13, HIGH-digitalRead(PC13));   
 }
 
-ros::Subscriber<fifth_prop::TwoInts> sub1("thrust", messageCb );
+ros::Subscriber<fifth_prop::BPS_thrust> sub1("thrust", messageCb );
 
 
 
