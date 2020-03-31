@@ -1,3 +1,4 @@
+
 /*
  * rosserial Publisher Example
  * Prints "hello world!"
@@ -28,19 +29,35 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int16_t motor_idle_speed = 1500;
-
 uint32_t loop_timer;                                                         
 uint16_t incoming_byte;
 uint32_t esc_1;
+uint32_t gimbal_angle;
+
+
+uint32_t target_angle;              // Global shared variables
+uint8_t gimbal_Kp = 50;
+uint8_t slider_Kp = 1;    
 
 uint8_t NewInt;
+uint8_t gimbal_int;
 uint16_t counter;
+uint8_t slider_counter;
+
+
+//Timere
+uint8_t rising_edge_set;
+uint32_t measured_time;
+float feedback;
+float prev_feedback;
+uint32_t measured_time_start;
 
 uint16_t thrust;
 uint16_t arm;
-
-int t = 2;
+uint16_t gimbal_thrust;
+uint16_t slider;
+uint16_t gimbal_arm;
+uint16_t slider_arm;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Meldinger
@@ -56,22 +73,27 @@ std_msgs::UInt32 int_msg;
 ros::Publisher pubChatter("chatter", &int_msg);
 
 
-
 /////////////////////////////////////////////////////////
 //Subscriber
 
-void messageCb(const fifth_prop::BPS_thrust &toggle_msg){
-  thrust = toggle_msg.thrust;
-  arm = toggle_msg.arm;
+void BPSCb(const fifth_prop::BPS_thrust &thrust_msg){
+  thrust = thrust_msg.thrust;
+  arm = thrust_msg.arm;
   NewInt = 1;
   counter = 0;
   digitalWrite(PC13, HIGH-digitalRead(PC13));   
 }
 
-ros::Subscriber<fifth_prop::BPS_thrust> sub1("thrust", messageCb );
+void Gimbal_angleCb(const fifth_prop::BPS_thrust &gimbal_msg){
+  gimbal_angle = gimbal_msg.thrust;
+  gimbal_arm = gimbal_msg.arm;   
+}
 
 
 
+ros::Subscriber<fifth_prop::BPS_thrust> sub_BPS("thrust", BPSCb);
+
+ros::Subscriber<fifth_prop::BPS_thrust> sub_gimbal("gimbal", Gimbal_angleCb);
 
 
 void setup()
@@ -83,7 +105,8 @@ void setup()
   nh.advertise(pubChatter);   //Setter opp publisher
 
 //Setter opp subscriber
-  nh.subscribe(sub1);         
+  nh.subscribe(sub_BPS); 
+  nh.subscribe(sub_gimbal);         
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,7 +134,9 @@ void loop()
 {  
   
   //sender thrusten tilbake
-  int_msg.data = esc_1;
+  int_msg.data = thrust;
+  
+  //int_msg.data = esc_1;
   pubChatter.publish(&int_msg);                       //publiserer meldingen
   
   nh.spinOnce(); 
@@ -119,7 +144,9 @@ void loop()
   nh.loginfo("Running!"); 
 
 
-//////////////////////////////////////////
+//esc_1
+///////////////////////////////////////////
+
   if (NewInt == 0){
     
     counter++;
@@ -135,29 +162,67 @@ void loop()
     esc_1 = thrust;
 
     if (esc_1 < 1000) esc_1 = 1000;                                                //Hvis motoren er under revers, sett fart lik revers
-    if (esc_1 > 2000) esc_1 = 2000;                                                 //Maks-puls lik 2000;
+    if (esc_1 > 2000) esc_1 = 2000;                                                //Maks-puls lik 2000;
     NewInt = 0;
   }
 
   else {
-    esc_1 = 1000;                                                               //Hvis start != 2, fart = 0
+    esc_1 = 1000;                                                                  //Hvis start != 2, fart = 0
   }
 
+
+//////////////////////////////////////////
+
+  if (gimbal_int){
+
+//gimbal_angle
+
+    if (gimbal_arm == 1) {
+
+      gimbal_control();
+
+ 
+      //NewInt = 0;
+    }
+
+    else {
+      gimbal_thrust = 1500;                                                                  
+    }
+
+
+
+//slider
+
+
+    if (slider_arm == 1) {
+
+      feedback360();
+
+ 
+      //NewInt = 0;
+    }
+
+    else {
+      slider = 1500;                                                                  
+    }
+
+
+    gimbal_int--;
+  }
+  else {
+    gimbal_int++; 
+  }
+
+///////////////////////////////////////
   
   
 
   TIMER4_BASE->CCR1 = esc_1;                                                       //Sett lengden på pulsen lik det vi har regnet ut at den skal bli
+  TIMER4_BASE->CCR2 = gimbal_thrust;
+  TIMER4_BASE->CCR3 = slider;
   TIMER4_BASE->CNT = 5000;                                                         //Verdien blir nullstilt av software ikke ARR
 
-
-/*
-  if (micros() - loop_timer > 10050) {
-    //str_msg.data = "error";                                                                  //Hvis loopen varer i mer enn 4000 mikrosekunder = feil
-  }
-*/  
-  while (micros() - loop_timer < 10000);                                            //Vent til 4000 mikrosekunder har gått
-  
+ 
+  while (micros() - loop_timer < 10000);                                            //Vent til 10000 mikrosekunder har gått, 100 Hz
   loop_timer = micros();  
-  
-  //delay(10);
 }
